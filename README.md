@@ -38,7 +38,7 @@ CREATE TABLE users (
     identity_number VARCHAR(20) NOT NULL UNIQUE, 
     full_name VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('super_admin', 'admin', 'mahasiswa', 'satgas') DEFAULT 'mahasiswa',
+    role ENUM('super_admin', 'admin', 'mahasiswa') DEFAULT 'mahasiswa',
     phone_number VARCHAR(15),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -58,7 +58,9 @@ JWT_SECRET=owi_ppkpt_2025
 ---
 
 ### 5. Menjalankan Server
-* **npm run dev**
+```bash
+npm run dev
+```
 
 Jika berhasil, terminal akan menampilkan: 
 ```bash
