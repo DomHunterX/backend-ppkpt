@@ -27,9 +27,10 @@ Pastikan laptop sudah terinstall:
 Buka terminal di dalam folder proyek, lalu jalankan:
 ```bash
 npm install
+```
 
 ### 3. Setup Database
-
+```bash
 USE db_ppkpt_polinela;
 
 CREATE TABLE users (
