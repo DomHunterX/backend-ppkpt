@@ -45,15 +45,15 @@ CREATE TABLE users (
 ```
 
 ### 4. Konfigurasi Environment (.env)
-PORT=3000
-DB_HOST=localhost
-DB_USER=root
-DB_PASS=
-DB_NAME=db_ppkpt_polinela
-JWT_SECRET=owi_ppkpt_2025
+* **PORT=3000**
+* **DB_HOST=localhost**
+* **DB_USER=root**
+* **DB_PASS=**
+* **DB_NAME=db_ppkpt_polinela**
+* **JWT_SECRET=owi_ppkpt_2025** 
 
 ### 5. Menjalankan Server
-npm run dev
+* **npm run dev**
 
 Jika berhasil, terminal akan menampilkan: Server PPKPT berjalan di port 3000 Database Connected Successfully
 
@@ -64,11 +64,15 @@ Jika berhasil, terminal akan menampilkan: Server PPKPT berjalan di port 3000 Dat
 
 ---
 
-⚠️ Catatan untuk Frontend (Flutter): Simpan token ini di Secure Storage atau Shared Preferences. Token ini wajib dikirim di Header untuk request selanjutnya.
+## ⚠️ Catatan untuk Frontend (Flutter): Simpan token ini di Secure Storage atau Shared Preferences. Token ini wajib dikirim di Header untuk request selanjutnya.
 
 ---
 
-📂 Struktur Folder
+## 📂 Struktur Folder
+Menggunakan pola **MVC (Model-View-Controller)** agar kode rapi dan mudah dikembangkan tim.
+
+```text
+/backend-ppkpt
 │
 ├── /src
 │   ├── /config         # Koneksi Database & Library Config
