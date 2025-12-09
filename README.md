@@ -55,8 +55,6 @@ DB_NAME=db_ppkpt_polinela
 JWT_SECRET=owi_ppkpt_2025
 ```
 
----
-
 ### 5. Menjalankan Server
 ```bash
 npm run dev
@@ -67,8 +65,6 @@ Jika berhasil, terminal akan menampilkan:
 Server PPKPT berjalan di port 3000 Database Connected Successfully
 ```
 
----
-
 ### 6. Dokumentasi API (Endpoints)
 * **Base URL:** http://localhost:3000
 * **API Login:** /api/auth/login
@@ -76,7 +72,8 @@ Server PPKPT berjalan di port 3000 Database Connected Successfully
 
 ---
 
-## ⚠️ Catatan untuk Frontend (Flutter): Simpan token ini di Secure Storage atau Shared Preferences. Token ini wajib dikirim di Header untuk request selanjutnya.
+## ⚠️ Catatan untuk Frontend (Flutter): 
+Simpan token di Secure Storage atau Shared Preferences. Token ini wajib dikirim di Header untuk request selanjutnya.
 
 ---
 
