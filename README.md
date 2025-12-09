@@ -46,17 +46,26 @@ CREATE TABLE users (
 ```
 
 ### 4. Konfigurasi Environment (.env)
-* **PORT=3000**
-* **DB_HOST=localhost**
-* **DB_USER=root**
-* **DB_PASS=**
-* **DB_NAME=db_ppkpt_polinela**
-* **JWT_SECRET=owi_ppkpt_2025** 
+```bash
+PORT=3000
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=
+DB_NAME=db_ppkpt_polinela
+JWT_SECRET=owi_ppkpt_2025
+```
+
+---
 
 ### 5. Menjalankan Server
 * **npm run dev**
 
-Jika berhasil, terminal akan menampilkan: Server PPKPT berjalan di port 3000 Database Connected Successfully
+Jika berhasil, terminal akan menampilkan: 
+```bash
+Server PPKPT berjalan di port 3000 Database Connected Successfully
+```
+
+---
 
 ### 6. Dokumentasi API (Endpoints)
 * **Base URL:** http://localhost:3000
