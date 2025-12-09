@@ -37,7 +37,7 @@ CREATE TABLE users (
     identity_number VARCHAR(20) NOT NULL UNIQUE, 
     full_name VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('mahasiswa', 'dosen', 'tenaga_kependidikan', 'satgas', 'admin') DEFAULT 'mahasiswa',
+    role ENUM('super_admin', 'admin', 'mahasiswa', 'satgas') DEFAULT 'mahasiswa',
     phone_number VARCHAR(15),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
