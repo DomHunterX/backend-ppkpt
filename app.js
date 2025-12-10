@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 const authRoutes = require('./src/routes/authRoutes'); // Route API untuk login, Register
+const profileRoutes = require('./src/routes/profileRoutes');
+const laporanRoutes = require('./src/routes/laporanRoutes');
 
 // Import fungsi cek koneksi
 const { checkConnection } = require('./src/config/database');
@@ -11,6 +13,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 app.use('/api/auth', authRoutes); // Panggil Route API
+app.use('/api', profileRoutes);
+app.use('/api', laporanRoutes);
 
 // Route Utama
 app.get('/', (req, res) => {
