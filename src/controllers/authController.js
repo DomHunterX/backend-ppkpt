@@ -48,39 +48,51 @@ const register = async (req, res) => {
 
 // Logika Login
 const login = async (req, res) => {
-    const { identity_number, password } = req.body;
+    // Validasi input dasar + trimming
+    const identity_number = (req.body.identity_number || '').trim();
+    const password = req.body.password || '';
+
+    if (!identity_number || !password) {
+        return res.status(400).json({ message: "NIM/NIP dan Password wajib diisi." });
+    }
 
     try {
-        // Cari user berdasarkan NIM
+        // Cari user berdasarkan identity_number
         const user = await userModel.findUserByIdentity(identity_number);
 
-        // Jika user tidak ditemukan
         if (!user) {
-            return res.status(401).json({ message: "Login Gagal: NPM tidak ditemukan." });
+            return res.status(401).json({ message: "Identity tidak ditemukan." });
         }
 
-        // Cek Password (Bandingkan input user dengan Hash di DB)
-        const isMatch = await bcrypt.compare(password, user.password);
-        
+        // Cek Password (bandingkan dengan hash di DB)
+        const isMatch = await bcrypt.compare(password, user.password || '');
         if (!isMatch) {
-            return res.status(401).json({ message: "Login Gagal: Password salah." });
+            return res.status(401).json({ message: "Password salah." });
         }
 
-        // Jika Sukses, Buat Token JWT
-        // Token ini berisi ID dan Role user
+        // Guard untuk secret JWT
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            return res.status(500).json({ message: "Konfigurasi JWT_SECRET tidak ditemukan." });
+        }
+
+        // Buat Token JWT berisi id, role, dan identity_number
         const token = jwt.sign(
-            { id: user.id, role: user.role, identity: user.identity_number }, 
-            process.env.JWT_SECRET, 
-            { expiresIn: '7d' } // Token berlaku 7 hari (biar user tidak login terus-terusan)
+            { id: user.id, role: user.role || 'mahasiswa', identity_number: user.identity_number },
+            secret,
+            { expiresIn: '7d' }
         );
 
+        // Bentuk payload user yang konsisten dengan tabel (opsional field jika tidak ada di DB dump)
         res.json({
             message: "Login Berhasil",
-            token: token, // Ini yang akan disimpan di HP User
+            token,
             user: {
                 id: user.id,
-                name: user.full_name,
-                role: user.role
+                identity_number: user.identity_number,
+                full_name: user.full_name || null,
+                phone_number: user.phone_number || null,
+                role: user.role || 'mahasiswa'
             }
         });
 

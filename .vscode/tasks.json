@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "seed:test-user",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"src/scripts/seed_test_user.js"
+			],
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "seed:test-user",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"src/scripts/seed_test_user.js"
+			],
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
+		}
+	]
+}
