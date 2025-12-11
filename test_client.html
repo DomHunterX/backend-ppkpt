@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulasi HP Mahasiswa</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .box { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+        .log { background: #f4f4f4; height: 300px; overflow-y: scroll; padding: 10px; border: 1px solid #333; }
+        .notif { background: #d4edda; color: #155724; padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 5px solid #28a745; }
+    </style>
+</head>
+<body>
+    <h2>Simulasi Aplikasi Mobile (Client)</h2>
+    
+    <div class="box">
+        <label>Login sebagai User ID:</label>
+        <input type="number" id="userIdInput" value="1" placeholder="Masukkan ID User Anda">
+        <button onclick="connectSocket()">Koneksi ke Server</button>
+    </div>
+
+    <h3>Log Notifikasi:</h3>
+    <div id="logArea" class="log"></div>
+
+    <script>
+        let socket;
+
+        function connectSocket() {
+            const userId = document.getElementById('userIdInput').value;
+            const logArea = document.getElementById('logArea');
+
+            // 1. Koneksi ke Backend Express
+            socket = io("http://localhost:3000");
+
+            socket.on("connect", () => {
+                logMessage(`Terhubung ke Server dengan ID Socket: ${socket.id}`);
+                
+                // 2. Gabung ke Room Pribadi (Sesuai ID User di Database)
+                socket.emit("join_room", parseInt(userId)); // Kirim ID User
+                logMessage(`Mengirim request join_room untuk User ID: ${userId}`);
+            });
+
+            // 3. MENDENGARKAN NOTIFIKASI DARI CONTROLLER
+            socket.on("notifikasi_status", (data) => {
+                console.log("Notif diterima:", data);
+                
+                // Tampilkan di layar ala-ala notif HP
+                const html = `
+                    <div class="notif">
+                        <strong>${data.title}</strong><br>
+                        ${data.message}<br>
+                        <small>Status Baru: ${data.status_baru}</small>
+                    </div>
+                `;
+                logArea.innerHTML += html;
+            });
+
+            socket.on("disconnect", () => {
+                logMessage("Terputus dari server");
+            });
+        }
+
+        function logMessage(msg) {
+            document.getElementById('logArea').innerHTML += `<p>${msg}</p>`;
+        }
+    </script>
+</body>
+</html>
