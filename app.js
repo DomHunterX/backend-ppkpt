@@ -18,6 +18,7 @@ const io = new Server(server, {
 const authRoutes = require('./src/routes/authRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
 const laporanRoutes = require('./src/routes/laporanRoutes');
+const riwayatRoutes = require('./src/routes/riwayatRoutes');
 
 // Import fungsi cek koneksi
 const { checkConnection } = require('./src/config/database');
@@ -49,6 +50,7 @@ app.set('socketio', io);
 app.use('/api/auth', authRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', laporanRoutes);
+app.use('/api', riwayatRoutes);
 
 // Route Utama
 app.get('/', (req, res) => {
