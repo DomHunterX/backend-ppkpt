@@ -57,8 +57,19 @@ const createLaporan = async (data) => {
 };
 
 // Fungsi untuk mendapatkan semua laporan berdasarkan mahasiswa_id
+// Dengan join ke riwayat_laporan untuk ambil tanggal & jam pembuatan
 const getLaporanByMahasiswaId = async (mahasiswa_id) => {
-    const query = `SELECT * FROM laporan WHERE mahasiswa_id = ? ORDER BY tanggal DESC`;
+    const query = `
+        SELECT 
+            l.*,
+            r.created_at as tanggal_dibuat,
+            DATE_FORMAT(r.created_at, '%H:%i') as jam_dibuat,
+            DATE_FORMAT(r.created_at, '%d %b') as tanggal_format
+        FROM laporan l
+        LEFT JOIN riwayat_laporan r ON l.laporan_id = r.laporan_id AND r.aksi = 'Laporan Dibuat'
+        WHERE l.mahasiswa_id = ?
+        ORDER BY r.created_at DESC
+    `;
     const [rows] = await db.execute(query, [mahasiswa_id]);
     return rows;
 };

@@ -3,6 +3,9 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const laporanController = require('../controllers/laporanController');
 
+// GET /api/laporan/check-active - Cek apakah user punya laporan aktif
+router.get('/laporan/check-active', auth, laporanController.checkActiveLaporan);
+
 // POST /api/laporan - Buat laporan baru (harus login)
 router.post('/laporan', auth, laporanController.createLaporan);
 
