@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 10, 2025 at 05:36 PM
+-- Generation Time: Dec 12, 2025 at 05:50 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -88,6 +88,13 @@ CREATE TABLE `laporan` (
   `status` enum('Dalam Proses','Verifikasi','Proses Lanjutan','Selesai','Ditolak') DEFAULT 'Dalam Proses',
   `catatan_tindak_lanjut` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `laporan`
+--
+
+INSERT INTO `laporan` (`laporan_id`, `mahasiswa_id`, `nama`, `nomor_telepon`, `domisili`, `tanggal`, `jenis_kekerasan`, `cerita_peristiwa`, `pelampiran_bukti`, `disabilitas`, `status_pelapor`, `alasan`, `alasan_lainnya`, `pendampingan`, `status`, `catatan_tindak_lanjut`) VALUES
+(12, 1, 'roy suryo', '12345678', 'london', '2025-12-07', 'ijazah palsu jokowi', 'saya dah curiga awal kok saya analisis keliatan palsu', NULL, 'TIDAK', 'Pendidik', '', 'test ajah', 'YA', 'Dalam Proses', NULL);
 
 --
 -- Triggers `laporan`
@@ -184,6 +191,14 @@ CREATE TABLE `mahasiswa` (
   `phone_number` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `mahasiswa`
+--
+
+INSERT INTO `mahasiswa` (`id`, `user_id`, `nim`, `full_name`, `jurusan`, `phone_number`) VALUES
+(1, 1, '237B6003', 'roy suryo', 'Teknik Informatika', '081234567890'),
+(2, 2, 'MHS0002', 'jokowi', 'Teknik Kehutanan', '081234567891');
+
 -- --------------------------------------------------------
 
 --
@@ -218,6 +233,13 @@ CREATE TABLE `riwayat_laporan` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `riwayat_laporan`
+--
+
+INSERT INTO `riwayat_laporan` (`id`, `laporan_id`, `pelapor_id`, `pelapor_role`, `aksi`, `status_sebelumnya`, `status_baru`, `catatan`, `created_at`) VALUES
+(12, 12, 1, 'Pendidik', 'Laporan Dibuat', 'Dalam Proses', 'Dalam Proses', NULL, '2025-12-11 17:04:19');
+
 -- --------------------------------------------------------
 
 --
@@ -244,6 +266,14 @@ CREATE TABLE `users` (
   `role` enum('super_admin','admin','mahasiswa') DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `identity_number`, `password`, `role`, `created_at`) VALUES
+(1, 'MHS0001', '$2b$10$4RV3t.btC3I.4o53HMs6r.AqD2iay9cFzsfAXl1BQ3z9NoqTqJ.rC', 'mahasiswa', '2025-12-10 16:49:55'),
+(2, 'MHS0002', '$2b$10$v3SCbld52AiRIZmfwQ4kUevok09XD9gEoiy1habBBnPlXmh64eQk2', 'mahasiswa', '2025-12-11 17:06:59');
 
 -- --------------------------------------------------------
 
@@ -362,13 +392,13 @@ ALTER TABLE `edukasi`
 -- AUTO_INCREMENT for table `laporan`
 --
 ALTER TABLE `laporan`
-  MODIFY `laporan_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `laporan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `mahasiswa`
 --
 ALTER TABLE `mahasiswa`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `notifications`
@@ -380,7 +410,7 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT for table `riwayat_laporan`
 --
 ALTER TABLE `riwayat_laporan`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `super_admin`
@@ -392,7 +422,7 @@ ALTER TABLE `super_admin`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `user_notifications`
@@ -438,7 +468,7 @@ ALTER TABLE `mahasiswa`
 -- Constraints for table `riwayat_laporan`
 --
 ALTER TABLE `riwayat_laporan`
-  ADD CONSTRAINT `fk_riwayat_laporan_laporan` FOREIGN KEY (`laporan_id`) REFERENCES `laporan` (`laporan_id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_riwayat_laporan_laporan` FOREIGN KEY (`laporan_id`) REFERENCES `laporan` (`laporan_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `super_admin`
