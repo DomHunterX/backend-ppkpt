@@ -19,6 +19,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
 const laporanRoutes = require('./src/routes/laporanRoutes');
 const riwayatRoutes = require('./src/routes/riwayatRoutes');
+const notificationRoutes = require('./src/routes/notificationRoutes');
 
 // Import fungsi cek koneksi
 const { checkConnection } = require('./src/config/database');
@@ -32,10 +33,24 @@ app.use(express.json());
 io.on('connection', (socket) => {
     console.log('Client terkoneksi ke WebSocket:', socket.id);
 
-    // Event: User join room berdasarkan ID-nya (untuk notif privat)
+    // Event: User join room berdasarkan ID-nya (untuk notif privat mahasiswa)
     socket.on('join_room', (userId) => {
         socket.join(userId);
         console.log(`User ID ${userId} bergabung ke room notifikasi.`);
+    });
+
+    // Event: Admin/Super Admin join room (untuk broadcast ke semua admin)
+    socket.on('join_admin_room', (data) => {
+        const { userId, role } = data;
+        
+        if (role === 'admin') {
+            socket.join('admin_room');
+            console.log(`Admin ID ${userId} bergabung ke admin_room`);
+        } else if (role === 'super_admin') {
+            socket.join('super_admin_room');
+            socket.join('admin_room'); // Super admin juga masuk admin room
+            console.log(`Super Admin ID ${userId} bergabung ke super_admin_room dan admin_room`);
+        }
     });
 
     socket.on('disconnect', () => {
@@ -51,6 +66,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', laporanRoutes);
 app.use('/api', riwayatRoutes);
+app.use('/api', notificationRoutes);
 
 // Route Utama
 app.get('/', (req, res) => {
