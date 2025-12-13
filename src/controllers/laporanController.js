@@ -1,4 +1,5 @@
 const laporanModel = require('../models/laporanModel');
+const notificationModel = require('../models/notificationModel');
 const { db } = require('../config/database');
 
 // POST /api/laporan - Buat laporan baru
@@ -61,9 +62,55 @@ const createLaporan = async (req, res) => {
         // 5. Simpan laporan
         const result = await laporanModel.createLaporan(laporanData);
 
+        const kodeLaporan = `LP-${String(result.insertId).padStart(6, '0')}KV`;
+        const notifTitle = "Laporan Dalam Diproses";
+        const notifMessage = "Laporan telah diterima dan menunggu verifikasi";
+
+        // 6. Simpan notifikasi ke database
+        await notificationModel.createNotification({
+            type: 'LAPORAN_BARU',
+            title: notifTitle,
+            message: `${notifMessage}. Kode: ${kodeLaporan}`,
+            ref_id: result.insertId,
+            ref_type: 'LAPORAN'
+        });
+
+        console.log(`💾 Notifikasi tersimpan di database untuk Laporan ID: ${result.insertId}`);
+
+        // 7. Kirim notifikasi real-time via WebSocket
+        const io = req.app.get('socketio');
+        
+        // 7a. Notifikasi ke MAHASISWA yang buat laporan (private)
+        io.to(String(userId)).emit("notifikasi_laporan", {
+            laporan_id: result.insertId,
+            kode_laporan: kodeLaporan,
+            title: notifTitle,
+            message: notifMessage,
+            status: "Dalam Proses",
+            jenis_kekerasan: req.body.jenis_kekerasan,
+            timestamp: new Date()
+        });
+
+        console.log(`🔔 Notifikasi real-time dikirim ke Mahasiswa (User ID: ${userId})`);
+
+        // 7b. Broadcast ke SEMUA ADMIN & SUPER ADMIN (group notification)
+        io.to('admin_room').emit("notifikasi_laporan_admin", {
+            laporan_id: result.insertId,
+            kode_laporan: kodeLaporan,
+            title: "Laporan Baru Masuk",
+            message: `Laporan ${req.body.jenis_kekerasan} dari ${req.body.nama} telah masuk dan menunggu ditinjau`,
+            status: "Dalam Proses",
+            jenis_kekerasan: req.body.jenis_kekerasan,
+            pelapor: req.body.nama,
+            timestamp: new Date()
+        });
+
+        console.log(`📢 Broadcast notifikasi ke semua Admin & Super Admin`);
+
         res.status(201).json({
             message: "Laporan berhasil dibuat",
-            laporan_id: result.insertId
+            laporan_id: result.insertId,
+            kode_laporan: kodeLaporan
         });
 
     } catch (error) {
@@ -145,19 +192,16 @@ const updateStatusLaporan = async (req, res) => {
 
     try {
         // 1. Update Database (Status & Catatan)
-        // Pastikan kolom 'catatan' atau 'alasan_status' ada di tabel Anda
-        const queryUpdate = `UPDATE laporan SET status = ?, alasan_lainnya = ? WHERE id = ?`; 
-        // *Catatan: Saya pakai 'alasan_lainnya' untuk menyimpan catatan admin, sesuaikan dengan kolom DB Anda jika ada kolom khusus misal 'admin_notes'*
+        const queryUpdate = `UPDATE laporan SET status = ?, alasan_lainnya = ? WHERE laporan_id = ?`; 
         
         await db.execute(queryUpdate, [status, catatan, id]);
 
         // 2. Ambil Data User untuk Notifikasi
-        // Kita perlu tahu siapa pemilik laporan ini (user_id) untuk kirim WebSocket ke room yang benar
         const queryUser = `
             SELECT m.user_id, l.jenis_kekerasan, l.nama 
             FROM laporan l 
             JOIN mahasiswa m ON l.mahasiswa_id = m.id 
-            WHERE l.id = ?
+            WHERE l.laporan_id = ?
         `;
         const [rows] = await db.execute(queryUser, [id]);
 
@@ -165,19 +209,33 @@ const updateStatusLaporan = async (req, res) => {
             const targetUserId = rows[0].user_id;
             const jenisKasus = rows[0].jenis_kekerasan;
 
-            // 3. 🔥 INTEGRASI WEBSOCKET 🔥
+            const kodeLaporan = `LP-${String(id).padStart(6, '0')}KV`;
+            const notifTitle = "Status Laporan Diperbarui";
+            const notifMessage = `Laporan ${jenisKasus} Anda kini berstatus: ${status}`;
+
+            // 3. Simpan notifikasi ke database
+            await notificationModel.createNotification({
+                type: 'STATUS_LAPORAN',
+                title: notifTitle,
+                message: `${notifMessage}. Kode: ${kodeLaporan}`,
+                ref_id: id,
+                ref_type: 'LAPORAN'
+            });
+
+            console.log(`💾 Notifikasi tersimpan di database untuk Laporan ID: ${id}`);
+
+            // 4. Kirim notifikasi real-time via WebSocket
             const io = req.app.get('socketio');
 
-            // Kirim pesan real-time ke User tersebut
             io.to(targetUserId).emit("notifikasi_status", {
                 laporan_id: id,
-                title: "Status Laporan Diperbarui",
-                message: `Laporan ${jenisKasus} Anda kini berstatus: ${status}`,
+                title: notifTitle,
+                message: notifMessage,
                 status_baru: status,
                 timestamp: new Date()
             });
 
-            console.log(`🔔 Notifikasi WebSocket dikirim ke User ID: ${targetUserId}`);
+            console.log(`🔔 Notifikasi real-time dikirim ke User ID: ${targetUserId}`);
         }
 
         res.json({ 
