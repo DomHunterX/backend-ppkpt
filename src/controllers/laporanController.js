@@ -66,13 +66,14 @@ const createLaporan = async (req, res) => {
         const notifTitle = "Laporan Dalam Diproses";
         const notifMessage = "Laporan telah diterima dan menunggu verifikasi";
 
-        // 6. Simpan notifikasi ke database
+        // 6. Simpan notifikasi ke database (MySQL + Supabase)
         await notificationModel.createNotification({
             type: 'LAPORAN_BARU',
             title: notifTitle,
             message: `${notifMessage}. Kode: ${kodeLaporan}`,
             ref_id: result.insertId,
-            ref_type: 'LAPORAN'
+            ref_type: 'LAPORAN',
+            user_id: userId  // 🔥 TAMBAH: Untuk Supabase real-time filter
         });
 
         console.log(`💾 Notifikasi tersimpan di database untuk Laporan ID: ${result.insertId}`);
@@ -213,13 +214,14 @@ const updateStatusLaporan = async (req, res) => {
             const notifTitle = "Status Laporan Diperbarui";
             const notifMessage = `Laporan ${jenisKasus} Anda kini berstatus: ${status}`;
 
-            // 3. Simpan notifikasi ke database
+            // 3. Simpan notifikasi ke database (MySQL + Supabase)
             await notificationModel.createNotification({
                 type: 'STATUS_LAPORAN',
                 title: notifTitle,
                 message: `${notifMessage}. Kode: ${kodeLaporan}`,
                 ref_id: id,
-                ref_type: 'LAPORAN'
+                ref_type: 'LAPORAN',
+                user_id: targetUserId  // 🔥 TAMBAH: Untuk Supabase real-time filter
             });
 
             console.log(`💾 Notifikasi tersimpan di database untuk Laporan ID: ${id}`);

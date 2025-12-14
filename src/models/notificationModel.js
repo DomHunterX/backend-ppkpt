@@ -1,4 +1,5 @@
 const { db } = require('../config/database');
+const { supabase } = require('../config/supabase');
 
 // Fungsi untuk membuat notifikasi baru
 const createNotification = async (data) => {
@@ -7,7 +8,8 @@ const createNotification = async (data) => {
         title,
         message,
         ref_id,         // laporan_id atau id lainnya
-        ref_type        // 'LAPORAN', 'EDUKASI', 'AKTIVITAS'
+        ref_type,       // 'LAPORAN', 'EDUKASI', 'AKTIVITAS'
+        user_id         // BARU: Untuk filter notifikasi per user di Supabase
     } = data;
 
     const query = `
@@ -22,6 +24,32 @@ const createNotification = async (data) => {
         ref_id || null,
         ref_type || null
     ]);
+
+    // 🔥 SIMPAN KE SUPABASE (untuk Real-time)
+    if (supabase) {
+        try {
+            const { error } = await supabase
+                .from('notifications')
+                .insert([{
+                    notification_id: result.insertId,
+                    type: type,
+                    title: title,
+                    message: message,
+                    ref_id: ref_id || null,
+                    ref_type: ref_type || null,
+                    user_id: user_id || null, // Untuk filter per user
+                    created_at: new Date().toISOString()
+                }]);
+
+            if (error) {
+                console.error('❌ Supabase insert error:', error.message);
+            } else {
+                console.log('✅ Notifikasi tersimpan di Supabase (Real-time aktif)');
+            }
+        } catch (err) {
+            console.error('❌ Supabase error:', err.message);
+        }
+    }
 
     return result;
 };
