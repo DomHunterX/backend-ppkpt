@@ -3,6 +3,9 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const notificationController = require('../controllers/notificationController');
 
+// GET /api/notifications/me - Ambil notifikasi user yang login (untuk mobile app) - HARUS DI ATAS
+router.get('/notifications/me', auth, notificationController.getMyNotifications);
+
 // GET /api/notifications - Ambil semua notifikasi (untuk admin/monitoring)
 router.get('/notifications', auth, notificationController.getAllNotifications);
 

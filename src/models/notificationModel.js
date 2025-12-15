@@ -58,14 +58,19 @@ const createNotification = async (data) => {
 const getAllNotifications = async (limit = 50) => {
     const query = `
         SELECT 
-            n.*,
-            DATE_FORMAT(n.created_at, '%d %b %Y %H:%i') as formatted_date
-        FROM notifications n
-        ORDER BY n.created_at DESC
+            id,
+            type,
+            title,
+            message,
+            ref_id,
+            ref_type,
+            created_at
+        FROM notifications
+        ORDER BY created_at DESC
         LIMIT ?
     `;
     
-    const [rows] = await db.execute(query, [limit]);
+    const [rows] = await db.execute(query, [parseInt(limit)]);
     return rows;
 };
 
@@ -73,19 +78,49 @@ const getAllNotifications = async (limit = 50) => {
 const getNotificationsByRefId = async (ref_id, ref_type) => {
     const query = `
         SELECT 
-            n.*,
-            DATE_FORMAT(n.created_at, '%d %b %Y %H:%i') as formatted_date
-        FROM notifications n
-        WHERE n.ref_id = ? AND n.ref_type = ?
-        ORDER BY n.created_at DESC
+            id,
+            type,
+            title,
+            message,
+            ref_id,
+            ref_type,
+            created_at
+        FROM notifications
+        WHERE ref_id = ? AND ref_type = ?
+        ORDER BY created_at DESC
     `;
     
-    const [rows] = await db.execute(query, [ref_id, ref_type]);
+    const [rows] = await db.execute(query, [parseInt(ref_id), ref_type]);
+    return rows;
+};
+
+// Fungsi untuk mendapatkan notifikasi berdasarkan user_id (untuk mobile app)
+const getNotificationsByUserId = async (user_id, limit = 50) => {
+    // Query untuk ambil notifikasi dari laporan yang dibuat oleh user tersebut
+    const query = `
+        SELECT 
+            n.id,
+            n.type,
+            n.title,
+            n.message,
+            n.ref_id,
+            n.ref_type,
+            n.created_at
+        FROM notifications n
+        INNER JOIN laporan l ON n.ref_id = l.laporan_id AND n.ref_type = 'LAPORAN'
+        INNER JOIN mahasiswa m ON l.mahasiswa_id = m.id
+        WHERE m.user_id = ?
+        ORDER BY n.created_at DESC
+        LIMIT ?
+    `;
+    
+    const [rows] = await db.execute(query, [parseInt(user_id), parseInt(limit)]);
     return rows;
 };
 
 module.exports = {
     createNotification,
     getAllNotifications,
-    getNotificationsByRefId
+    getNotificationsByRefId,
+    getNotificationsByUserId
 };
