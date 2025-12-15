@@ -6,23 +6,45 @@ require('dotenv').config();
 // Logika Register
 const register = async (req, res) => {
     // Ambil data dari Body Request (yang dikirim dari Postman/Flutter)
-    const { identity_number, full_name, password, phone_number, role } = req.body;
+    const { identity_number, tahun_masuk, kode_jurusan, username, full_name, password, phone_number, role } = req.body;
 
     // Validasi sederhana
-    if (!identity_number || !password || !full_name) {
+    if (!password || !full_name) {
         return res.status(400).json({
-            message: "Gagal: NIM/NIP, Nama, dan Password wajib diisi!"
+            message: "Gagal: Nama dan Password wajib diisi!"
         });
     }
 
     try {
+        let finalIdentityNumber = identity_number;
+        
+        // Auto-generate NPM untuk mahasiswa jika tidak diinput manual
+        if ((!identity_number || identity_number.trim() === '') && (role === 'mahasiswa' || !role)) {
+            // Validasi tahun_masuk dan kode_jurusan untuk generate NPM
+            if (!tahun_masuk || !kode_jurusan) {
+                return res.status(400).json({
+                    message: "Gagal: Tahun Masuk dan Kode Jurusan wajib diisi untuk generate NPM mahasiswa!"
+                });
+            }
+            
+            // Generate NPM otomatis
+            finalIdentityNumber = await userModel.generateNPM(tahun_masuk, kode_jurusan);
+            console.log(`✅ NPM auto-generated: ${finalIdentityNumber}`);
+        } else if (!identity_number || identity_number.trim() === '') {
+            // Untuk role selain mahasiswa, identity_number wajib diisi manual
+            return res.status(400).json({
+                message: "Gagal: NIM/NIP wajib diisi untuk role selain mahasiswa!"
+            });
+        }
+
         // Enkripsi Password (Hashing)
         // 10 (tingkat kerumitan enkripsi)
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Siapkan data untuk model
         const newUser = {
-            identity_number,
+            identity_number: finalIdentityNumber,
+            username, // Opsional: username untuk login alternatif
             full_name,
             password: hashedPassword, // Simpan yang sudah di-hash!
             phone_number,
@@ -34,7 +56,12 @@ const register = async (req, res) => {
 
         res.status(201).json({
             message: "Registrasi Berhasil! Silakan login.",
-            data: { identity_number, full_name } // Jangan kembalikan password!
+            data: { 
+                identity_number: finalIdentityNumber, 
+                npm: finalIdentityNumber, // Alias untuk mahasiswa
+                username: username || null,
+                full_name 
+            } // Jangan kembalikan password!
         });
 
     } catch (error) {
@@ -49,25 +76,34 @@ const register = async (req, res) => {
 // Logika Login
 const login = async (req, res) => {
     // Validasi input dasar + trimming
-    const identity_number = (req.body.identity_number || '').trim();
+    // Terima dari field 'username' atau 'identity_number'
+    const loginInput = (req.body.username || req.body.identity_number || '').trim();
     const password = req.body.password || '';
 
-    if (!identity_number || !password) {
-        return res.status(400).json({ message: "NIM/NIP dan Password wajib diisi." });
+    if (!loginInput || !password) {
+        return res.status(400).json({ message: "Username/NIM/NIP dan Password wajib diisi." });
     }
 
     try {
-        // Cari user berdasarkan identity_number
-        const user = await userModel.findUserByIdentity(identity_number);
+        // Cari user berdasarkan identity_number ATAU username
+        const user = await userModel.findUserByIdentity(loginInput);
 
         if (!user) {
-            return res.status(401).json({ message: "Identity tidak ditemukan." });
+            return res.status(401).json({ 
+                success: false,
+                message: "Username atau NIM tidak ditemukan.",
+                error_code: "USER_NOT_FOUND"
+            });
         }
 
         // Cek Password (bandingkan dengan hash di DB)
         const isMatch = await bcrypt.compare(password, user.password || '');
         if (!isMatch) {
-            return res.status(401).json({ message: "Password salah." });
+            return res.status(401).json({ 
+                success: false,
+                message: "Password yang Anda masukkan salah.",
+                error_code: "WRONG_PASSWORD"
+            });
         }
 
         // Guard untuk secret JWT
@@ -85,11 +121,13 @@ const login = async (req, res) => {
 
         // Bentuk payload user yang konsisten dengan tabel (opsional field jika tidak ada di DB dump)
         res.json({
+            success: true,
             message: "Login Berhasil",
             token,
             user: {
                 id: user.id,
                 identity_number: user.identity_number,
+                username: user.username || null,
                 full_name: user.full_name || null,
                 phone_number: user.phone_number || null,
                 role: user.role || 'mahasiswa'

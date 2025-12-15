@@ -28,23 +28,24 @@ const createNotification = async (data) => {
     // 🔥 SIMPAN KE SUPABASE (untuk Real-time)
     if (supabase) {
         try {
-            const { error } = await supabase
+            const { data, error } = await supabase
                 .from('notifications')
                 .insert([{
-                    notification_id: result.insertId,
                     type: type,
                     title: title,
                     message: message,
                     ref_id: ref_id || null,
                     ref_type: ref_type || null,
                     user_id: user_id || null, // Untuk filter per user
+                    mysql_id: result.insertId, // Reference ke MySQL (opsional)
                     created_at: new Date().toISOString()
-                }]);
+                }])
+                .select();
 
             if (error) {
                 console.error('❌ Supabase insert error:', error.message);
             } else {
-                console.log('✅ Notifikasi tersimpan di Supabase (Real-time aktif)');
+                console.log(`✅ Notifikasi tersimpan di Supabase (ID: ${data[0]?.id}, MySQL ID: ${result.insertId})`);
             }
         } catch (err) {
             console.error('❌ Supabase error:', err.message);
