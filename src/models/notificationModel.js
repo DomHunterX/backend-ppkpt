@@ -9,12 +9,12 @@ const createNotification = async (data) => {
         message,
         ref_id,         // laporan_id atau id lainnya
         ref_type,       // 'LAPORAN', 'EDUKASI', 'AKTIVITAS'
-        user_id         // BARU: Untuk filter notifikasi per user di Supabase
+        user_id         // Untuk filter notifikasi per user
     } = data;
 
     const query = `
-        INSERT INTO notifications (type, title, message, ref_id, ref_type)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO notifications (type, title, message, ref_id, ref_type, user_id, is_read)
+        VALUES (?, ?, ?, ?, ?, ?, 0)
     `;
 
     const [result] = await db.execute(query, [
@@ -22,7 +22,8 @@ const createNotification = async (data) => {
         title,
         message,
         ref_id || null,
-        ref_type || null
+        ref_type || null,
+        user_id || null
     ]);
 
     // 🔥 SIMPAN KE SUPABASE (untuk Real-time)
@@ -37,7 +38,6 @@ const createNotification = async (data) => {
                     ref_id: ref_id || null,
                     ref_type: ref_type || null,
                     user_id: user_id || null, // Untuk filter per user
-                    mysql_id: result.insertId, // Reference ke MySQL (opsional)
                     created_at: new Date().toISOString()
                 }])
                 .select();
@@ -45,7 +45,7 @@ const createNotification = async (data) => {
             if (error) {
                 console.error('❌ Supabase insert error:', error.message);
             } else {
-                console.log(`✅ Notifikasi tersimpan di Supabase (ID: ${data[0]?.id}, MySQL ID: ${result.insertId})`);
+                console.log(`✅ Notifikasi tersimpan di Supabase (ID: ${data[0]?.id}, Ref: ${ref_id})`);
             }
         } catch (err) {
             console.error('❌ Supabase error:', err.message);
@@ -95,33 +95,133 @@ const getNotificationsByRefId = async (ref_id, ref_type) => {
     return rows;
 };
 
-// Fungsi untuk mendapatkan notifikasi berdasarkan user_id (untuk mobile app)
-const getNotificationsByUserId = async (user_id, limit = 50) => {
-    // Query untuk ambil notifikasi dari laporan yang dibuat oleh user tersebut
+// Fungsi untuk mendapatkan notifikasi berdasarkan user_id dengan pagination
+const getNotificationsByUserId = async (user_id, options = {}) => {
+    const {
+        page = 1,
+        limit = 50,
+        unreadOnly = false,
+        days = null
+    } = options;
+
+    const offset = (page - 1) * limit;
+    let whereClause = 'WHERE user_id = ?';
+    const params = [parseInt(user_id)];
+
+    // Filter hanya unread
+    if (unreadOnly) {
+        whereClause += ' AND is_read = 0';
+    }
+
+    // Filter by days (misal: 30 hari terakhir)
+    if (days) {
+        whereClause += ' AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)';
+        params.push(parseInt(days));
+    }
+
     const query = `
         SELECT 
-            n.id,
-            n.type,
-            n.title,
-            n.message,
-            n.ref_id,
-            n.ref_type,
-            n.created_at
-        FROM notifications n
-        INNER JOIN laporan l ON n.ref_id = l.laporan_id AND n.ref_type = 'LAPORAN'
-        INNER JOIN mahasiswa m ON l.mahasiswa_id = m.id
-        WHERE m.user_id = ?
-        ORDER BY n.created_at DESC
-        LIMIT ?
+            id,
+            type,
+            title,
+            message,
+            ref_id,
+            ref_type,
+            user_id,
+            is_read,
+            read_at,
+            created_at
+        FROM notifications
+        ${whereClause}
+        ORDER BY is_read ASC, created_at DESC
+        LIMIT ? OFFSET ?
     `;
     
-    const [rows] = await db.execute(query, [parseInt(user_id), parseInt(limit)]);
-    return rows;
+    params.push(parseInt(limit), offset);
+    const [rows] = await db.execute(query, params);
+
+    // Get total count
+    const countQuery = `
+        SELECT COUNT(*) as total
+        FROM notifications
+        ${whereClause}
+    `;
+    const [countResult] = await db.execute(countQuery, params.slice(0, -2));
+
+    return {
+        data: rows,
+        pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: countResult[0].total,
+            totalPages: Math.ceil(countResult[0].total / limit)
+        }
+    };
+};
+
+// Fungsi untuk mark notification as read
+const markAsRead = async (notification_id, user_id) => {
+    const query = `
+        UPDATE notifications 
+        SET is_read = 1, read_at = NOW()
+        WHERE id = ? AND user_id = ?
+    `;
+    
+    const [result] = await db.execute(query, [parseInt(notification_id), parseInt(user_id)]);
+    return result;
+};
+
+// Fungsi untuk mark all notifications as read
+const markAllAsRead = async (user_id) => {
+    const query = `
+        UPDATE notifications 
+        SET is_read = 1, read_at = NOW()
+        WHERE user_id = ? AND is_read = 0
+    `;
+    
+    const [result] = await db.execute(query, [parseInt(user_id)]);
+    return result;
+};
+
+// Fungsi untuk get unread count
+const getUnreadCount = async (user_id) => {
+    const query = `
+        SELECT COUNT(*) as unread_count
+        FROM notifications
+        WHERE user_id = ? AND is_read = 0
+    `;
+    
+    const [rows] = await db.execute(query, [parseInt(user_id)]);
+    return rows[0].unread_count;
+};
+
+// Fungsi untuk auto-cleanup notifikasi lama
+const cleanupOldNotifications = async () => {
+    // Hapus notifikasi > 90 hari untuk mahasiswa & admin
+    // Hapus notifikasi > 180 hari untuk super admin
+    const query = `
+        DELETE n FROM notifications n
+        LEFT JOIN users u ON n.user_id = u.id
+        WHERE (
+            (u.role IN ('mahasiswa', 'admin') AND n.created_at < DATE_SUB(NOW(), INTERVAL 90 DAY))
+            OR
+            (u.role = 'super_admin' AND n.created_at < DATE_SUB(NOW(), INTERVAL 180 DAY))
+            OR
+            (u.id IS NULL AND n.created_at < DATE_SUB(NOW(), INTERVAL 90 DAY))
+        )
+    `;
+    
+    const [result] = await db.execute(query);
+    return result;
 };
 
 module.exports = {
     createNotification,
     getAllNotifications,
     getNotificationsByRefId,
-    getNotificationsByUserId
+    getNotificationsByUserId,
+    markAsRead,
+    markAllAsRead,
+    getUnreadCount,
+    cleanupOldNotifications
 };

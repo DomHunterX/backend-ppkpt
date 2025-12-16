@@ -20,6 +20,7 @@ const profileRoutes = require('./src/routes/profileRoutes');
 const laporanRoutes = require('./src/routes/laporanRoutes');
 const riwayatRoutes = require('./src/routes/riwayatRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
+const mahasiswaRoutes = require('./src/routes/mahasiswaRoutes');
 
 // Import fungsi cek koneksi
 const { checkConnection } = require('./src/config/database');
@@ -67,11 +68,15 @@ app.use('/api', profileRoutes);
 app.use('/api', laporanRoutes);
 app.use('/api', riwayatRoutes);
 app.use('/api', notificationRoutes);
+app.use('/api', mahasiswaRoutes);
 
 // Route Utama
 app.get('/', (req, res) => {
     res.send('Halo! Selamat datang di Server Express PPKPT (WebSocket Ready)');
 });
+
+// Import Cron Jobs
+const { startNotificationCleanup } = require('./src/jobs/notificationCleanup');
 
 // Start Server dengan pengecekan DB
 const startServer = async () => {
@@ -81,6 +86,9 @@ const startServer = async () => {
         // [PENTING] GANTI app.listen MENJADI server.listen
         server.listen(PORT, () => {
             console.log(`🚀 Server PPKPT berjalan dengan WebSocket di port ${PORT}`);
+            
+            // Start cron jobs
+            startNotificationCleanup();
         });
         
     } catch (error) {
