@@ -104,7 +104,10 @@ const getNotificationsByUserId = async (user_id, options = {}) => {
         days = null
     } = options;
 
-    const offset = (page - 1) * limit;
+    // FIX: Convert to number dan inline LIMIT/OFFSET (tidak pakai ?)
+    const limitNum = Number(limit) || 50;
+    const offsetNum = Number((page - 1) * limitNum) || 0;
+    
     let whereClause = 'WHERE user_id = ?';
     const params = [parseInt(user_id)];
 
@@ -119,6 +122,7 @@ const getNotificationsByUserId = async (user_id, options = {}) => {
         params.push(parseInt(days));
     }
 
+    // FIX: LIMIT & OFFSET inline (bukan parameter ?)
     const query = `
         SELECT 
             id,
@@ -134,10 +138,9 @@ const getNotificationsByUserId = async (user_id, options = {}) => {
         FROM notifications
         ${whereClause}
         ORDER BY is_read ASC, created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT ${limitNum} OFFSET ${offsetNum}
     `;
     
-    params.push(parseInt(limit), offset);
     const [rows] = await db.execute(query, params);
 
     // Get total count
@@ -146,15 +149,15 @@ const getNotificationsByUserId = async (user_id, options = {}) => {
         FROM notifications
         ${whereClause}
     `;
-    const [countResult] = await db.execute(countQuery, params.slice(0, -2));
+    const [countResult] = await db.execute(countQuery, params);
 
     return {
         data: rows,
         pagination: {
             page: parseInt(page),
-            limit: parseInt(limit),
+            limit: limitNum,
             total: countResult[0].total,
-            totalPages: Math.ceil(countResult[0].total / limit)
+            totalPages: Math.ceil(countResult[0].total / limitNum)
         }
     };
 };

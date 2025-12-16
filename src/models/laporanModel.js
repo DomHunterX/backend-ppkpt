@@ -118,12 +118,11 @@ const getAllLaporan = async (filters = {}) => {
     // Order by
     query += ` ORDER BY r.created_at DESC`;
 
-    // Pagination
+    // Pagination - FIX: Inline LIMIT/OFFSET (tidak pakai ?)
     if (filters.limit) {
-        const limit = parseInt(filters.limit);
-        const offset = filters.page ? (parseInt(filters.page) - 1) * limit : 0;
-        query += ` LIMIT ? OFFSET ?`;
-        params.push(limit, offset);
+        const limitNum = Number(filters.limit) || 10;
+        const offsetNum = filters.page ? Number((parseInt(filters.page) - 1) * limitNum) : 0;
+        query += ` LIMIT ${limitNum} OFFSET ${offsetNum}`;
     }
 
     const [rows] = await db.execute(query, params);
