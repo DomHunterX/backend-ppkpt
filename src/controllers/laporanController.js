@@ -486,6 +486,9 @@ const getLaporanDetailAdmin = async (req, res) => {
 // PUT /api/admin/laporan/:id/verifikasi - Verifikasi laporan (ubah status ke "Verifikasi")
 const verifikasiLaporan = async (req, res) => {
     try {
+        // Get Socket.io instance
+        const io = req.app.get('socketio');
+        
         // Cek role admin
         if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
             return res.status(403).json({ 
@@ -547,7 +550,6 @@ const verifikasiLaporan = async (req, res) => {
             });
 
             // Kirim real-time notification
-            const io = req.app.get('socketio');
             io.to(String(targetUserId)).emit("notifikasi_status", {
                 laporan_id: id,
                 title: notifTitle,
@@ -623,6 +625,9 @@ const verifikasiLaporan = async (req, res) => {
 // PUT /api/admin/laporan/:id/proses - Proses lanjutan laporan
 const prosesLaporan = async (req, res) => {
     try {
+        // Get Socket.io instance
+        const io = req.app.get('socketio');
+        
         // Cek role admin
         if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
             return res.status(403).json({ 
@@ -684,7 +689,6 @@ const prosesLaporan = async (req, res) => {
             });
 
             // Real-time notification
-            const io = req.app.get('socketio');
             io.to(String(targetUserId)).emit("notifikasi_status", {
                 laporan_id: id,
                 title: notifTitle,
@@ -726,7 +730,6 @@ const prosesLaporan = async (req, res) => {
         }
 
         // Broadcast ke super_admin room untuk real-time notification
-        const io = req.app.get('socketio');
         io.to('super_admin_room').emit("notifikasi_super_admin", {
             laporan_id: id,
             kode_laporan: kodeLaporan,
@@ -757,6 +760,9 @@ const prosesLaporan = async (req, res) => {
 // PUT /api/admin/laporan/:id/selesai - Selesaikan laporan
 const selesaikanLaporan = async (req, res) => {
     try {
+        // Get Socket.io instance
+        const io = req.app.get('socketio');
+        
         // Cek role admin
         if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
             return res.status(403).json({ 
@@ -824,7 +830,6 @@ const selesaikanLaporan = async (req, res) => {
             });
 
             // Real-time notification
-            const io = req.app.get('socketio');
             io.to(String(targetUserId)).emit("notifikasi_status", {
                 laporan_id: id,
                 title: notifTitle,
@@ -866,7 +871,6 @@ const selesaikanLaporan = async (req, res) => {
         }
 
         // Broadcast ke super_admin room untuk real-time notification
-        const io = req.app.get('socketio');
         io.to('super_admin_room').emit("notifikasi_super_admin", {
             laporan_id: id,
             kode_laporan: kodeLaporan,
@@ -897,6 +901,9 @@ const selesaikanLaporan = async (req, res) => {
 // PUT /api/admin/laporan/:id/tolak - Tolak laporan
 const tolakLaporan = async (req, res) => {
     try {
+        // Get Socket.io instance
+        const io = req.app.get('socketio');
+        
         // Cek role admin
         if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
             return res.status(403).json({ 
@@ -970,7 +977,6 @@ const tolakLaporan = async (req, res) => {
             });
 
             // Real-time notification
-            const io = req.app.get('socketio');
             io.to(String(targetUserId)).emit("notifikasi_status", {
                 laporan_id: id,
                 title: notifTitle,
@@ -1012,7 +1018,6 @@ const tolakLaporan = async (req, res) => {
         }
 
         // Broadcast ke super_admin room untuk real-time notification
-        const io = req.app.get('socketio');
         io.to('super_admin_room').emit("notifikasi_super_admin", {
             laporan_id: id,
             kode_laporan: kodeLaporan,
