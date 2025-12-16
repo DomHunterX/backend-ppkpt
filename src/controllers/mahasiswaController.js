@@ -41,10 +41,13 @@ const getAllMahasiswa = async (req, res) => {
             params.push(searchPattern, searchPattern, searchPattern);
         }
 
+        // Convert to number and inline LIMIT/OFFSET (not parameterized)
+        const limitNum = Number(limit) || 10;
+        const offsetNum = Number(offset) || 0;
+
         query += ` GROUP BY m.id, u.id`;
         query += ` ORDER BY u.created_at DESC`;
-        query += ` LIMIT ? OFFSET ?`;
-        params.push(parseInt(limit), parseInt(offset));
+        query += ` LIMIT ${limitNum} OFFSET ${offsetNum}`;
 
         const [rows] = await db.execute(query, params);
 
